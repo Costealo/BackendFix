@@ -22,7 +22,7 @@ public class PriceDatabase
     public int UserId { get; set; }
     
     [ForeignKey("UserId")]
-    public User User { get; set; } = null!;
+    public virtual User? User { get; set; }
 
     public EntityStatus Status { get; set; } = EntityStatus.Draft;
 
