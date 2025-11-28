@@ -11,7 +11,7 @@ public class PriceItem
     public int PriceDatabaseId { get; set; }
 
     [ForeignKey("PriceDatabaseId")]
-    public PriceDatabase PriceDatabase { get; set; } = null!;
+    public virtual PriceDatabase? PriceDatabase { get; set; }
 
     [MaxLength(100)]
     public string ExternalId { get; set; } = string.Empty;

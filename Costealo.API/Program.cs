@@ -36,6 +36,17 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IExcelService, ExcelService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 
+// Configure CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFlutter", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 // Configure HttpClient for RapidAPI Unit Conversion
 builder.Services.AddHttpClient<IUnitConversionService, UnitConversionService>(client =>
 {
@@ -66,6 +77,8 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowFlutter");
 
 app.UseAuthentication();
 app.UseAuthorization();
