@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace Costealo.API.Models;
 
@@ -24,7 +25,8 @@ public class PriceDatabase
     
     [ForeignKey("UserId")]
     [JsonIgnore] // Prevent exposing user data (email, passwordHash) in responses
-    public User User { get; set; } = null!;
+    [ValidateNever]
+    public virtual User? User { get; set; }
 
     public EntityStatus Status { get; set; } = EntityStatus.Draft;
 

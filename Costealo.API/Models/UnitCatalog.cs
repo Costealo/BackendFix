@@ -157,12 +157,22 @@ public static class UnitCatalog
         .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Verifica si una unidad es válida
+    /// Obtiene todos los símbolos válidos
+    /// </summary>
+    public static HashSet<string> ValidSymbols { get; } = Categories
+        .SelectMany(c => c.Value)
+        .Where(u => !string.IsNullOrWhiteSpace(u.Symbol))
+        .Select(u => u.Symbol)
+        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Verifica si una unidad es válida (acepta tanto ApiCode como Symbol)
     /// </summary>
     public static bool IsValidUnit(string? unit)
     {
         if (string.IsNullOrWhiteSpace(unit)) return false;
-        return ValidUnits.Contains(unit.Trim());
+        var trimmed = unit.Trim();
+        return ValidUnits.Contains(trimmed) || ValidSymbols.Contains(trimmed);
     }
 
     /// <summary>

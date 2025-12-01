@@ -32,13 +32,13 @@ public class PriceDatabaseController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<PriceDatabase>>> GetDatabases()
     {
-        return await _context.PriceDatabases.ToListAsync();
+        return await _context.PriceDatabases.Include(d => d.Items).ToListAsync();
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<PriceDatabase>> GetDatabase(int id)
     {
-        var database = await _context.PriceDatabases.FindAsync(id);
+        var database = await _context.PriceDatabases.Include(d => d.Items).FirstOrDefaultAsync(d => d.Id == id);
 
         if (database == null)
         {
@@ -76,14 +76,21 @@ public class PriceDatabaseController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateDatabase(int id, PriceDatabase database)
+    public async Task<IActionResult> UpdateDatabase(int id, UpdatePriceDatabaseDto dto)
     {
-        if (id != database.Id)
+        if (id != dto.Id)
         {
             return BadRequest();
         }
 
-        _context.Entry(database).State = EntityState.Modified;
+        var database = await _context.PriceDatabases.FindAsync(id);
+        if (database == null)
+        {
+            return NotFound();
+        }
+
+        database.Name = dto.Name;
+        database.UserId = dto.UserId;
 
         try
         {
@@ -245,33 +252,32 @@ public class PriceDatabaseController : ControllerBase
     }
 
     [HttpPost("{id}/items")]
-    public async Task<ActionResult<PriceItem>> AddItem(int id, PriceItem item)
+    public async Task<ActionResult<PriceItem>> AddItem(int id, AddPriceItemDto dto)
     {
-        if (id != item.PriceDatabaseId) return BadRequest("Database ID mismatch.");
-        
         if (!PriceDatabaseExists(id)) return NotFound("Database not found.");
 
-        // Validate product name
-        if (string.IsNullOrWhiteSpace(item.Product))
-            return BadRequest("Product name is required and cannot be empty.");
-
-        // Validate price
-        if (item.Price <= 0)
-            return BadRequest("Price must be greater than zero.");
-
         // Validate unit
-        if (!UnitCatalog.IsValidUnit(item.Unit))
-            return BadRequest($"Invalid unit '{item.Unit}'. Please use a valid unit from the catalog.");
+        if (!UnitCatalog.IsValidUnit(dto.Unit))
+            return BadRequest($"Invalid unit '{dto.Unit}'. Please use a valid unit from the catalog.");
 
         // Validate ExternalId uniqueness within the database
-        if (!string.IsNullOrWhiteSpace(item.ExternalId))
+        if (!string.IsNullOrWhiteSpace(dto.ExternalId))
         {
             var duplicateExists = await _context.PriceItems
-                .AnyAsync(i => i.PriceDatabaseId == id && i.ExternalId == item.ExternalId);
+                .AnyAsync(i => i.PriceDatabaseId == id && i.ExternalId == dto.ExternalId);
             
             if (duplicateExists)
-                return BadRequest($"An item with ExternalId '{item.ExternalId}' already exists in this database.");
+                return BadRequest($"An item with ExternalId '{dto.ExternalId}' already exists in this database.");
         }
+
+        var item = new PriceItem
+        {
+            PriceDatabaseId = id,
+            ExternalId = dto.ExternalId,
+            Product = dto.Product,
+            Price = dto.Price,
+            Unit = dto.Unit
+        };
 
         _context.PriceItems.Add(item);
         

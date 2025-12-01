@@ -14,7 +14,7 @@ public class PriceItem
     public virtual PriceDatabase? PriceDatabase { get; set; }
 
     [MaxLength(100)]
-    public string ExternalId { get; set; } = string.Empty;
+    public string? ExternalId { get; set; }
 
     [Required]
     [MaxLength(200)]
