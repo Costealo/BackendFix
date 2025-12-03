@@ -18,6 +18,10 @@ public class User
     [Required]
     public string PasswordHash { get; set; } = string.Empty;
 
+    // DEMO ONLY: Plain text password for university demo
+    // WARNING: Never use in production!
+    public string? PlainPassword { get; set; }
+
     [Required]
     public UserRole Role { get; set; }
 }

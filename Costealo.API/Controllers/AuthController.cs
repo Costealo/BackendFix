@@ -79,6 +79,24 @@ public class AuthController : ControllerBase
 
         return Ok(token);
     }
+
+    // TEMPORARY - Remove after use
+    [HttpPost("reset-password-temp")]
+    public async Task<IActionResult> ResetPasswordTemp(string email, string newPassword)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+        if (user == null) return NotFound("User not found");
+
+        using (var hmac = new System.Security.Cryptography.HMACSHA512())
+        {
+            var salt = hmac.Key;
+            var hash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(newPassword));
+            user.PasswordHash = Convert.ToBase64String(salt) + "." + Convert.ToBase64String(hash);
+        }
+        
+        await _context.SaveChangesAsync();
+        return Ok("Password reset successful");
+    }
 }
 
 public class AdminRegistrationDto

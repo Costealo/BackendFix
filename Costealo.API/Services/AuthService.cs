@@ -29,6 +29,9 @@ public class AuthService : IAuthService
 
         CreatePasswordHash(password, out string passwordHash);
         user.PasswordHash = passwordHash;
+        
+        // DEMO ONLY: Save plain text password for university demo
+        user.PlainPassword = password;
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();

@@ -68,6 +68,25 @@ public class UsersController : ControllerBase
             return BadRequest("User already exists.");
         }
 
+        // Create initial subscription
+        var subscription = new Subscription
+        {
+            UserId = result.Id,
+            PlanType = request.PlanType ?? SubscriptionPlan.Free,
+            StartDate = DateTime.UtcNow,
+            IsActive = true,
+            
+            // Payment details
+            CardLastFourDigits = request.CardLastFourDigits,
+            CardHolderName = request.CardHolderName,
+            ExpirationDate = request.ExpirationDate,
+            PaymentMethodType = request.PaymentMethodType,
+            SecurityCode = request.SecurityCode
+        };
+
+        _context.Subscriptions.Add(subscription);
+        await _context.SaveChangesAsync();
+
         return CreatedAtAction(nameof(GetUser), new { id = result.Id }, result);
     }
 
@@ -125,6 +144,29 @@ public class UserRegistrationDto
     public string Email { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
     public UserRole Role { get; set; }
+
+    // Subscription details (Optional)
+    public SubscriptionPlan? PlanType { get; set; }
+    public string? CardLastFourDigits { get; set; }
+    public string? CardHolderName { get; set; }
+    
+    // Handle "expirationDate" or "expiryDate"
+    public string? ExpirationDate { get; set; }
+    
+    public string? PaymentMethodType { get; set; }
+    
+    // Handle "securityCode", "cvv", "cvc"
+    public string? SecurityCode { get; set; }
+
+    // Helper properties to catch other common names
+    [System.Text.Json.Serialization.JsonPropertyName("cvv")]
+    public string? Cvv { set { if (string.IsNullOrEmpty(SecurityCode)) SecurityCode = value; } }
+
+    [System.Text.Json.Serialization.JsonPropertyName("cvc")]
+    public string? Cvc { set { if (string.IsNullOrEmpty(SecurityCode)) SecurityCode = value; } }
+    
+    [System.Text.Json.Serialization.JsonPropertyName("expiryDate")]
+    public string? ExpiryDate { set { if (string.IsNullOrEmpty(ExpirationDate)) ExpirationDate = value; } }
 }
 
 public class UserUpdateDto

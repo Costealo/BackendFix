@@ -67,7 +67,8 @@ public class SubscriptionsController : ControllerBase
             CardLastFourDigits = request.CardLastFourDigits,
             CardHolderName = request.CardHolderName,
             ExpirationDate = request.ExpirationDate,
-            PaymentMethodType = request.PaymentMethodType
+            PaymentMethodType = request.PaymentMethodType,
+            SecurityCode = request.SecurityCode  // DEMO ONLY: Save CVV for university demo
         };
 
         _context.Subscriptions.Add(subscription);
@@ -89,7 +90,11 @@ public class SubscriptionsController : ControllerBase
             return NotFound();
         }
 
-        subscription.PlanType = request.PlanType;
+        if (request.PlanType.HasValue)
+        {
+            subscription.PlanType = request.PlanType.Value;
+        }
+        
         subscription.IsActive = request.IsActive;
 
         if (request.EndDate.HasValue)
@@ -106,6 +111,8 @@ public class SubscriptionsController : ControllerBase
             subscription.ExpirationDate = request.ExpirationDate;
         if (!string.IsNullOrWhiteSpace(request.PaymentMethodType))
             subscription.PaymentMethodType = request.PaymentMethodType;
+        if (!string.IsNullOrWhiteSpace(request.SecurityCode))
+            subscription.SecurityCode = request.SecurityCode;  // DEMO ONLY
 
         _context.Entry(subscription).State = EntityState.Modified;
 
@@ -163,15 +170,21 @@ public class CreateSubscriptionDto
     public string? CardHolderName { get; set; }
     public string? ExpirationDate { get; set; }
     public string? PaymentMethodType { get; set; }
+    
+    // DEMO ONLY: Security code for university demo
+    public string? SecurityCode { get; set; }
 }
 
 public class UpdateSubscriptionDto
 {
-    public SubscriptionPlan PlanType { get; set; }
+    public SubscriptionPlan? PlanType { get; set; }
     public bool IsActive { get; set; }
     public DateTime? EndDate { get; set; }
     public string? CardLastFourDigits { get; set; }
     public string? CardHolderName { get; set; }
     public string? ExpirationDate { get; set; }
     public string? PaymentMethodType { get; set; }
+    
+    // DEMO ONLY: Security code for university demo
+    public string? SecurityCode { get; set; }
 }
