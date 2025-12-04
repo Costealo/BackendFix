@@ -44,19 +44,19 @@ public class Subscription
     [NotMapped]
     public int MaxWorkbooks => PlanType switch
     {
-        SubscriptionPlan.Free => 5,
+        SubscriptionPlan.Free => 10,
         SubscriptionPlan.Basico => 10,
         SubscriptionPlan.Estandar => 25,
         SubscriptionPlan.Premium => int.MaxValue,
-        _ => 5
+        _ => 10
     };
 
     [NotMapped]
     public int MaxDatabases => PlanType switch
     {
         SubscriptionPlan.Free => 1,
-        SubscriptionPlan.Basico => 2,
-        SubscriptionPlan.Estandar => 3,
+        SubscriptionPlan.Basico => 1,
+        SubscriptionPlan.Estandar => 2,
         SubscriptionPlan.Premium => int.MaxValue,
         _ => 1
     };

@@ -32,13 +32,20 @@ public class PriceDatabaseController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<PriceDatabase>>> GetDatabases()
     {
-        return await _context.PriceDatabases.Include(d => d.Items).ToListAsync();
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        return await _context.PriceDatabases
+            .Where(d => d.UserId == userId)
+            .Include(d => d.Items)
+            .ToListAsync();
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<PriceDatabase>> GetDatabase(int id)
     {
-        var database = await _context.PriceDatabases.Include(d => d.Items).FirstOrDefaultAsync(d => d.Id == id);
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var database = await _context.PriceDatabases
+            .Include(d => d.Items)
+            .FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId);
 
         if (database == null)
         {
@@ -57,7 +64,15 @@ public class PriceDatabaseController : ControllerBase
         if (!await _subscriptionService.CanCreateDatabase(userId))
         {
             var subscription = await _subscriptionService.GetUserSubscription(userId);
-            return BadRequest($"Database limit reached for your {subscription.PlanType} plan. Upgrade to create more databases.");
+            var planName = subscription.PlanType switch
+            {
+                SubscriptionPlan.Free => "Free",
+                SubscriptionPlan.Basico => "Básico",
+                SubscriptionPlan.Estandar => "Estándar",
+                SubscriptionPlan.Premium => "Premium",
+                _ => subscription.PlanType.ToString()
+            };
+            return BadRequest($"Database limit reached for your {planName} plan. Upgrade to create more databases.");
         }
 
         var database = new PriceDatabase
@@ -66,7 +81,8 @@ public class PriceDatabaseController : ControllerBase
             SourceUrl = dto.SourceUrl,
             UploadDate = DateTime.UtcNow,
             ItemCount = 0,
-            UserId = userId
+            UserId = userId,
+            Status = dto.Status ?? EntityStatus.Draft
         };
 
         _context.PriceDatabases.Add(database);
@@ -83,7 +99,8 @@ public class PriceDatabaseController : ControllerBase
             return BadRequest();
         }
 
-        var database = await _context.PriceDatabases.FindAsync(id);
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var database = await _context.PriceDatabases.FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId);
         if (database == null)
         {
             return NotFound();
@@ -91,6 +108,12 @@ public class PriceDatabaseController : ControllerBase
 
         database.Name = dto.Name;
         database.UserId = dto.UserId;
+        
+        // Update status if provided (allows changing from Published to Draft and vice versa)
+        if (dto.Status.HasValue)
+        {
+            database.Status = dto.Status.Value;
+        }
 
         try
         {
@@ -114,13 +137,31 @@ public class PriceDatabaseController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteDatabase(int id)
     {
-        var database = await _context.PriceDatabases.Include(d => d.Items).FirstOrDefaultAsync(d => d.Id == id);
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var database = await _context.PriceDatabases
+            .Include(d => d.Items)
+            .FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId);
         if (database == null)
         {
             return NotFound();
         }
 
         _context.PriceDatabases.Remove(database);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    // PUT: api/PriceDatabase/{id}/publish
+    [HttpPut("{id}/publish")]
+    public async Task<IActionResult> PublishDatabase(int id)
+    {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var database = await _context.PriceDatabases.FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId);
+
+        if (database == null) return NotFound();
+
+        database.Status = EntityStatus.Published;
         await _context.SaveChangesAsync();
 
         return NoContent();
@@ -141,7 +182,15 @@ public class PriceDatabaseController : ControllerBase
         if (!await _subscriptionService.CanCreateDatabase(userId))
         {
             var subscription = await _subscriptionService.GetUserSubscription(userId);
-            return BadRequest($"Database limit reached for your {subscription.PlanType} plan. Upgrade to create more databases.");
+            var planName = subscription.PlanType switch
+            {
+                SubscriptionPlan.Free => "Free",
+                SubscriptionPlan.Basico => "Básico",
+                SubscriptionPlan.Estandar => "Estándar",
+                SubscriptionPlan.Premium => "Premium",
+                _ => subscription.PlanType  .ToString()
+            };
+            return BadRequest($"Database limit reached for your {planName} plan. Upgrade to create more databases.");
         }
 
         try
@@ -180,7 +229,15 @@ public class PriceDatabaseController : ControllerBase
         if (!await _subscriptionService.CanCreateDatabase(userId))
         {
             var subscription = await _subscriptionService.GetUserSubscription(userId);
-            return BadRequest($"Database limit reached for your {subscription.PlanType} plan. Upgrade to create more databases.");
+            var planName = subscription.PlanType switch
+            {
+                SubscriptionPlan.Free => "Free",
+                SubscriptionPlan.Basico => "Básico",
+                SubscriptionPlan.Estandar => "Estándar",
+                SubscriptionPlan.Premium => "Premium",
+                _ => subscription.PlanType.ToString()
+            };
+            return BadRequest($"Database limit reached for your {planName} plan. Upgrade to create more databases.");
         }
 
         try
@@ -214,7 +271,10 @@ public class PriceDatabaseController : ControllerBase
     [HttpPut("{id}/refresh")]
     public async Task<IActionResult> RefreshDatabase(int id)
     {
-        var database = await _context.PriceDatabases.Include(d => d.Items).FirstOrDefaultAsync(d => d.Id == id);
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var database = await _context.PriceDatabases
+            .Include(d => d.Items)
+            .FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId);
         if (database == null) return NotFound();
         if (string.IsNullOrWhiteSpace(database.SourceUrl)) return BadRequest("This database does not have a source URL.");
 
@@ -248,6 +308,10 @@ public class PriceDatabaseController : ControllerBase
     [HttpGet("{id}/items")]
     public async Task<ActionResult<IEnumerable<PriceItem>>> GetDatabaseItems(int id)
     {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var database = await _context.PriceDatabases.FindAsync(id);
+        if (database == null || database.UserId != userId) return NotFound();
+
         return await _context.PriceItems.Where(i => i.PriceDatabaseId == id).ToListAsync();
     }
 

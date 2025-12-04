@@ -95,7 +95,10 @@ public class SubscriptionsController : ControllerBase
             subscription.PlanType = request.PlanType.Value;
         }
         
-        subscription.IsActive = request.IsActive;
+        if (request.IsActive.HasValue)
+        {
+            subscription.IsActive = request.IsActive.Value;
+        }
 
         if (request.EndDate.HasValue)
         {
@@ -178,7 +181,7 @@ public class CreateSubscriptionDto
 public class UpdateSubscriptionDto
 {
     public SubscriptionPlan? PlanType { get; set; }
-    public bool IsActive { get; set; }
+    public bool? IsActive { get; set; }
     public DateTime? EndDate { get; set; }
     public string? CardLastFourDigits { get; set; }
     public string? CardHolderName { get; set; }
