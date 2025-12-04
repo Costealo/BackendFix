@@ -13,10 +13,18 @@ public class WorkbookItem
     [ForeignKey("WorkbookId")]
     public Workbook Workbook { get; set; } = null!;
 
-    public int PriceItemId { get; set; }
+    // Optional: Reference to PriceItem from database
+    public int? PriceItemId { get; set; }
     
     [ForeignKey("PriceItemId")]
-    public PriceItem PriceItem { get; set; } = null!;
+    public PriceItem? PriceItem { get; set; }
+
+    // Manual item fields (used when PriceItemId is null)
+    [MaxLength(200)]
+    public string? ManualItemName { get; set; }
+    
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal? ManualItemPrice { get; set; }
 
     // User Inputs
     [Column(TypeName = "decimal(18,4)")]

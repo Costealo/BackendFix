@@ -66,7 +66,6 @@ namespace Costealo.API.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ExternalId")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
@@ -126,6 +125,10 @@ namespace Costealo.API.Migrations
                     b.Property<int>("PlanType")
                         .HasColumnType("int");
 
+                    b.Property<string>("SecurityCode")
+                        .HasMaxLength(4)
+                        .HasColumnType("nvarchar(4)");
+
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
@@ -158,6 +161,9 @@ namespace Costealo.API.Migrations
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PlainPassword")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Role")

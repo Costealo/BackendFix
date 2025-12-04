@@ -68,6 +68,25 @@ public class UsersController : ControllerBase
             return BadRequest("User already exists.");
         }
 
+        // Create initial subscription
+        var subscription = new Subscription
+        {
+            UserId = result.Id,
+            PlanType = request.PlanType ?? SubscriptionPlan.Free,
+            StartDate = DateTime.UtcNow,
+            IsActive = true,
+            
+            // Payment details
+            CardLastFourDigits = request.CardLastFourDigits,
+            CardHolderName = request.CardHolderName,
+            ExpirationDate = request.ExpirationDate,
+            PaymentMethodType = request.PaymentMethodType,
+            SecurityCode = request.SecurityCode
+        };
+
+        _context.Subscriptions.Add(subscription);
+        await _context.SaveChangesAsync();
+
         return CreatedAtAction(nameof(GetUser), new { id = result.Id }, result);
     }
 
@@ -113,6 +132,39 @@ public class UsersController : ControllerBase
         return NoContent();
     }
 
+    // DELETE: api/Users/{id}
+    [HttpDelete("{id}")]
+    [Authorize]
+    public async Task<IActionResult> DeleteUser(int id)
+    {
+        var user = await _context.Users.FindAsync(id);
+        
+        if (user == null || user.Role == UserRole.Admin)
+        {
+            return NotFound();
+        }
+
+        // Delete related data (cascade)
+        // 1. Delete subscriptions
+        var subscriptions = await _context.Subscriptions.Where(s => s.UserId == id).ToListAsync();
+        _context.Subscriptions.RemoveRange(subscriptions);
+
+        // 2. Delete workbooks and their items
+        var workbooks = await _context.Workbooks.Include(w => w.Items).Where(w => w.UserId == id).ToListAsync();
+        _context.Workbooks.RemoveRange(workbooks);
+
+        // 3. Delete price databases and their items
+        var databases = await _context.PriceDatabases.Include(d => d.Items).Where(d => d.UserId == id).ToListAsync();
+        _context.PriceDatabases.RemoveRange(databases);
+
+        // 4. Delete the user
+        _context.Users.Remove(user);
+
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
     private bool UserExists(int id)
     {
         return _context.Users.Any(e => e.Id == id);
@@ -125,6 +177,29 @@ public class UserRegistrationDto
     public string Email { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
     public UserRole Role { get; set; }
+
+    // Subscription details (Optional)
+    public SubscriptionPlan? PlanType { get; set; }
+    public string? CardLastFourDigits { get; set; }
+    public string? CardHolderName { get; set; }
+    
+    // Handle "expirationDate" or "expiryDate"
+    public string? ExpirationDate { get; set; }
+    
+    public string? PaymentMethodType { get; set; }
+    
+    // Handle "securityCode", "cvv", "cvc"
+    public string? SecurityCode { get; set; }
+
+    // Helper properties to catch other common names
+    [System.Text.Json.Serialization.JsonPropertyName("cvv")]
+    public string? Cvv { set { if (string.IsNullOrEmpty(SecurityCode)) SecurityCode = value; } }
+
+    [System.Text.Json.Serialization.JsonPropertyName("cvc")]
+    public string? Cvc { set { if (string.IsNullOrEmpty(SecurityCode)) SecurityCode = value; } }
+    
+    [System.Text.Json.Serialization.JsonPropertyName("expiryDate")]
+    public string? ExpiryDate { set { if (string.IsNullOrEmpty(ExpirationDate)) ExpirationDate = value; } }
 }
 
 public class UserUpdateDto

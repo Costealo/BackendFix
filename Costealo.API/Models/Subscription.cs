@@ -35,23 +35,28 @@ public class Subscription
     [MaxLength(50)]
     public string? PaymentMethodType { get; set; } // "Tarjeta de débito" or "Tarjeta de crédito"
 
+    // DEMO ONLY: Security code (CVV) for university demo
+    // WARNING: Never store CVV in production!
+    [MaxLength(4)]
+    public string? SecurityCode { get; set; }
+
     // Calculated properties based on plan
     [NotMapped]
     public int MaxWorkbooks => PlanType switch
     {
-        SubscriptionPlan.Free => 5,
+        SubscriptionPlan.Free => 10,
         SubscriptionPlan.Basico => 10,
         SubscriptionPlan.Estandar => 25,
         SubscriptionPlan.Premium => int.MaxValue,
-        _ => 5
+        _ => 10
     };
 
     [NotMapped]
     public int MaxDatabases => PlanType switch
     {
         SubscriptionPlan.Free => 1,
-        SubscriptionPlan.Basico => 2,
-        SubscriptionPlan.Estandar => 3,
+        SubscriptionPlan.Basico => 1,
+        SubscriptionPlan.Estandar => 2,
         SubscriptionPlan.Premium => int.MaxValue,
         _ => 1
     };
