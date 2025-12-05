@@ -3,10 +3,10 @@ namespace Costealo.API.DTOs;
 public class WorkbookItemDto
 {
     public int Id { get; set; }
-    public int PriceItemId { get; set; }
-    public string ProductName { get; set; } = string.Empty;
-    public decimal OriginalPrice { get; set; } // Price from PriceItem
-    public string OriginalUnit { get; set; } = string.Empty; // Unit from PriceItem
+    public int? PriceItemId { get; set; }
+    public string? ProductName { get; set; }
+    public decimal? OriginalPrice { get; set; } // Price from PriceItem
+    public string? OriginalUnit { get; set; } // Unit from PriceItem
     
     public decimal QuantityUsed { get; set; } // Quantity in recipe
     public string UnitUsed { get; set; } = string.Empty; // Unit in recipe
