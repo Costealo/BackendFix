@@ -32,6 +32,16 @@ public class UnitConversionService : IUnitConversionService
         { ("milliliter", "liter"), 0.001m },
     };
 
+    // Generic units that don't require conversion (1:1 ratio)
+    private static readonly HashSet<string> _genericUnits = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "unidad", "ud",
+        "pieza", "pz",
+        "paquete", "paq",
+        "caja", "cj",
+        "bolsa", "bls"
+    };
+
     public UnitConversionService(
         HttpClient httpClient, 
         IConfiguration configuration,
@@ -51,6 +61,15 @@ public class UnitConversionService : IUnitConversionService
         // If units are the same, return the original quantity
         if (fromUnitNormalized == toUnitNormalized)
         {
+            return quantity;
+        }
+
+        // If either unit is generic, use 1:1 ratio (no conversion needed)
+        if (_genericUnits.Contains(fromUnitNormalized) || _genericUnits.Contains(toUnitNormalized))
+        {
+            _logger.LogInformation(
+                "Generic unit detected ({From} to {To}), using 1:1 ratio",
+                fromUnit, toUnit);
             return quantity;
         }
 

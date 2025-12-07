@@ -8,6 +8,16 @@ public static class UnitCatalog
     public static Dictionary<string, List<UnitInfo>> Categories { get; } = new()
     {
         {
+            "General", new List<UnitInfo>
+            {
+                new("unidad", "Unidad", "ud"),
+                new("pieza", "Pieza", "pz"),
+                new("paquete", "Paquete", "paq"),
+                new("caja", "Caja", "cj"),
+                new("bolsa", "Bolsa", "bls")
+            }
+        },
+        {
             "Peso", new List<UnitInfo>
             {
                 new("kilogram", "Kilogramo", "kg"),
